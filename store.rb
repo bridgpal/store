@@ -26,7 +26,7 @@ get '/products' do
 end
 
 get '/products/search' do
-  @q = params[:name]
+  @q = params[:q]
   file = open("http://search.twitter.com/search.json?q=#{URI.escape(@q)}")
   @results = JSON.load(file.read)
   erb :search_results
