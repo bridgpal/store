@@ -6,29 +6,45 @@ require 'sinatra/reloader'
 require 'sqlite3'
 require 'better_errors'
 
+require 'json'
+require 'open-uri'
+require 'uri'
+
 configure :development do
   use BetterErrors::Middleware
   BetterErrors.application_root = File.expand_path("..", __FILE__)
 end
- 
+
 before do
   @db = SQLite3::Database.new "store.sqlite3"
   @db.results_as_hash = true
 end
 
- 
-get '/users' do
-  @rs = @db.prepare('SELECT * FROM users;').execute
-  erb :show_users
-end
- 
- get '/' do
-  erb :home
+get '/products' do
+  @rs = @db.execute('SELECT * FROM products;')
+  erb :products
 end
 
-get '/products' do
-  @rs = @db.prepare('SELECT * FROM products;').execute
-  erb :products
+get '/products/search' do
+  @q = params[:q]
+  file = open("http://search.twitter.com/search.json?q=#{URI.escape(@q)}")
+  @results = JSON.load(file.read)
+  erb :search_results
+end
+
+
+get '/users' do
+  @rs = @db.execute('SELECT * FROM users;')
+  erb :show_users
+end
+
+get '/users.json' do
+  @rs = @db.execute('SELECT id, name FROM users;')
+  @rs.to_json
+end
+
+ get '/' do
+  erb :home
 end
 
 get '/new-product' do
@@ -46,7 +62,7 @@ end
 
 get '/products/:id' do
   @id = params[:id]
-  @rs = @db.prepare("SELECT * FROM products WHERE id = #{@id};").execute
+  @rs = @db.execute("SELECT * FROM products WHERE id = #{@id};")
   erb :product_id
 end
 
